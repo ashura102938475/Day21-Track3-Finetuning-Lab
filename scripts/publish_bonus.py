@@ -44,7 +44,7 @@ def update_report(root: pathlib.Path) -> None:
         trace = json.loads((root / "results/bonus/reasoning_trace.json").read_text())["runs"]
         sweep = json.loads((root / "results/bonus/rank_sweep.json").read_text())
         text += marker + f"\n**B1.** Merge: {merge['before_merge']:.4f} → {merge['after_merge']:.4f} " \
-            f"(Δ {merge['delta']:+.4f}); `correct` và `attn_only` được hot-swap trên cùng base. Merge bỏ overhead adapter nhưng mất khả năng đổi hành vi theo request; giữ adapter riêng phù hợp multi-tenant.\n\n"
+            f"(Δ {merge['delta']:+.4f}); `correct` và bonus `rank_8` được hot-swap trên cùng base. Merge bỏ overhead adapter nhưng mất khả năng đổi hành vi theo request; giữ adapter riêng phù hợp multi-tenant.\n\n"
         text += "| B3 mask | target | regression | format | valid trace |\n|---|---:|---:|---:|---:|\n" + "\n".join(
             f"| {r['mask_mode']} | {r['target']:.4f} | {r['regression']:.4f} | {r['format']:.4f} | {r['valid_trace_rate']:.4f} |" for r in trace)
         text += "\n\nAccuracy một mình không phát hiện trace collapse; `valid_trace_rate` là tín hiệu trực tiếp cần đọc cùng target.\n\n"

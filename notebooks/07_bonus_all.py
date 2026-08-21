@@ -76,6 +76,11 @@ def train_adapter(key, train_rows, mask_mode, rank):
 def stage_b1():
     from peft import PeftModel
     target = rows(ROOT / "data/eval_target.jsonl")
+    # The submission intentionally ships only adapters/correct. Build the second
+    # adapter in bonus storage instead of assuming the optional core contrasts were
+    # uploaded. B4 reuses this exact fingerprint, so the work is never duplicated.
+    train_rows = rows(ROOT / "data/split/train.jsonl")
+    second = train_adapter("rank_8", train_rows, "assistant-only", 8)
     model, tok = generate.load_base(TIER)
     model = PeftModel.from_pretrained(model, str(ROOT / "adapters/correct"), adapter_name="correct")
     before_preds, _ = generate.generate_batch(model, tok, [r["input"] for r in target], system=NAIVE_PROMPT)
@@ -89,9 +94,9 @@ def stage_b1():
     del merged; generate.free_memory()
     model, tok = generate.load_base(TIER)
     model = PeftModel.from_pretrained(model, str(ROOT / "adapters/correct"), adapter_name="correct")
-    model.load_adapter(str(ROOT / "adapters/attn_only"), adapter_name="attn_only")
+    model.load_adapter(str(BONUS_ADAPTERS / "rank_8"), adapter_name="rank_8")
     sample = target[0]["input"]; outputs = {}
-    for name in ("correct", "attn_only"):
+    for name in ("correct", "rank_8"):
         model.set_adapter(name); pred, _ = generate.generate_batch(model, tok, [sample], system=NAIVE_PROMPT)
         outputs[name] = pred[0]
     atomic_json(BONUS_RESULTS / "hotswap.json", {"adapters": list(outputs), "adapter_count": 2,

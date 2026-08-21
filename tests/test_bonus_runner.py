@@ -20,3 +20,11 @@ def test_rank_sweep_is_controlled():
     assert 'BONUS_ADAPTERS = ROOT / "adapters" / "bonus"' in source
     assert "run_meta.json" in source
     assert '"rank_range"' in source and '"placement_delta"' in source and '"lr_delta"' in source
+
+
+def test_b1_builds_a_resumable_second_adapter_in_bonus_storage():
+    source = SOURCE.read_text(encoding="utf-8")
+    b1 = source.split("def stage_b1():", 1)[1].split("def mask_hash", 1)[0]
+    assert 'train_adapter("rank_8"' in b1
+    assert 'adapters/attn_only' not in b1
+    assert 'BONUS_ADAPTERS / "rank_8"' in b1
