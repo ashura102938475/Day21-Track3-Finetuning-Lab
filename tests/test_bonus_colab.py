@@ -36,4 +36,12 @@ def test_gpu_stage_cells_use_diagnostic_runner():
     nb = json.loads(NB.read_text(encoding="utf-8"))
     by_title = {c["metadata"]["title"]: "".join(c.get("source", [])) for c in nb["cells"]}
     for title, stage in (("B1", "b1"), ("B3", "b3"), ("B4", "b4")):
-        assert f'"scripts/bonus_stage.py", "{stage}"' in by_title[title]
+        assert f'run_stage("{stage}")' in by_title[title]
+        assert "subprocess" not in by_title[title]
+
+
+def test_notebook_defines_in_process_stage_runner():
+    nb = json.loads(NB.read_text(encoding="utf-8"))
+    setup = "".join(nb["cells"][1]["source"])
+    assert "runpy.run_path" in setup
+    assert "stage_b1" in setup
