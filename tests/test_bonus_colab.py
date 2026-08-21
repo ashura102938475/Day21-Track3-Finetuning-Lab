@@ -30,3 +30,10 @@ def test_build_is_deterministic():
     spec = importlib.util.spec_from_file_location("builder", ROOT / "scripts/build_bonus_colab.py")
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     assert module.render_notebook() == module.render_notebook()
+
+
+def test_gpu_stage_cells_use_diagnostic_runner():
+    nb = json.loads(NB.read_text(encoding="utf-8"))
+    by_title = {c["metadata"]["title"]: "".join(c.get("source", [])) for c in nb["cells"]}
+    for title, stage in (("B1", "b1"), ("B3", "b3"), ("B4", "b4")):
+        assert f'"scripts/bonus_stage.py", "{stage}"' in by_title[title]
