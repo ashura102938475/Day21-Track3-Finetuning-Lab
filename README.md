@@ -151,3 +151,14 @@ Chạy `make verify` trước khi nén file: nó kiểm tra artefact **và** ki�
 sánh bạn được chấm là một phép so sánh công bằng.
 
 Điểm không nằm ở chỗ fine-tune của bạn thắng. Điểm nằm ở chỗ bạn **biết** nó có thắng hay không.
+
+## Bonus B1–B5 trên Colab
+
+Mở **[Lab21_BONUS_ALL.ipynb](https://colab.research.google.com/github/ashura102938475/Day21-Track3-Finetuning-Lab/blob/main/colab/Lab21_BONUS_ALL.ipynb)**, chọn GPU runtime và thêm hai giá trị trong Colab Secrets:
+
+- `HF_TOKEN`: Hugging Face write token để tạo model repo công khai.
+- `GITHUB_TOKEN`: GitHub token có quyền ghi vào fork cá nhân.
+
+Chạy tám cell theo thứ tự. Các stage train B3/B4 tự resume khi adapter đã có đủ hai file PEFT; bonus được ghi riêng dưới `results/bonus/` và không ghi đè kết quả core. Cell Publish chỉ đẩy artefact khi core verifier và bonus verifier đều đạt.
+
+Các kiểm tra CPU có thể chạy trước bằng `make bonus-data` và `make bonus-colab`; sau khi Colab hoàn tất, chạy `make bonus-verify`.
