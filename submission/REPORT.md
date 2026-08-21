@@ -1,9 +1,9 @@
 # Lab 21 — Evaluation Report
 
-**Họ tên**: CHƯA CUNG CẤP  **MSSV**: CHƯA CUNG CẤP  **Ngày**: 2026-08-21  
+**Họ tên**: NGUYỄN ANH TRÀ  **Mã HV**: 2A202601735  **Ngày**: 2026-08-21  
 **Tier**: `LAPTOP`  **Base model**: `Qwen/Qwen3.5-2B`  **GPU thực tế**: `NVIDIA GeForce RTX 4060 Laptop GPU 8 GB (7.65 GiB khả dụng)`
 
-> Mọi số liệu trong báo cáo này được chép từ `results/`; hai trường nhận diện phía trên cần được chủ bài nộp bổ sung trước khi nộp chính thức.
+> Mọi số liệu trong báo cáo này được chép từ `results/` và được kiểm tra chéo bằng `scripts/verify.py`.
 
 ---
 
