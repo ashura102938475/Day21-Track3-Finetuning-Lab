@@ -2,6 +2,9 @@ import importlib.util
 import json
 import pathlib
 import pytest
+import os
+import subprocess
+import sys
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -65,3 +68,11 @@ def test_existing_core_snapshot_cannot_be_rebased(tmp_path):
         json.dumps({"results/verdict.json": "frozen"}), encoding="utf-8")
     with pytest.raises(ValueError, match="core evidence changed"):
         bonus_data.write_all(tmp_path)
+
+
+def test_bonus_data_cli_imports_labkit_with_clean_pythonpath():
+    env = {**os.environ, "PYTHONPATH": ""}
+    probe = "import runpy; runpy.run_path('scripts/bonus_data.py'); import labkit.bonus"
+    result = subprocess.run([sys.executable, "-c", probe],
+                            cwd=ROOT, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

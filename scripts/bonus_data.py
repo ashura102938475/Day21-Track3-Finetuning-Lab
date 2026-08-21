@@ -8,9 +8,11 @@ import json
 import pathlib
 import random
 import re
+import sys
 import unicodedata
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 INTENTS = ["doi_tra", "van_chuyen", "hoan_tien", "san_pham_loi", "hoi_thong_tin"]
 URGENCIES = ["cao", "trung_binh", "thap"]
 SENTIMENTS = ["tieu_cuc", "trung_tinh", "tich_cuc"]
