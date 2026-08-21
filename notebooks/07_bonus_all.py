@@ -22,6 +22,16 @@ def rows(path):
     return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x.strip()]
 
 
+def core_train_rows():
+    """Return NB1's deterministic train split, including on a clean Git clone."""
+    split_path = ROOT / "data/split/train.jsonl"
+    if split_path.is_file():
+        return rows(split_path)
+    seed_rows = rows(ROOT / "data/train_seed.jsonl")
+    train_rows, _ = data.split(seed_rows, train_frac=0.9, seed=42)
+    return train_rows
+
+
 def atomic_json(path, value):
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -79,7 +89,7 @@ def stage_b1():
     # The submission intentionally ships only adapters/correct. Build the second
     # adapter in bonus storage instead of assuming the optional core contrasts were
     # uploaded. B4 reuses this exact fingerprint, so the work is never duplicated.
-    train_rows = rows(ROOT / "data/split/train.jsonl")
+    train_rows = core_train_rows()
     second = train_adapter("rank_8", train_rows, "assistant-only", 8)
     model, tok = generate.load_base(TIER)
     model = PeftModel.from_pretrained(model, str(ROOT / "adapters/correct"), adapter_name="correct")
@@ -129,7 +139,7 @@ def stage_b3():
 
 
 def stage_b4():
-    train_rows = rows(ROOT / "data/split/train.jsonl"); target = rows(ROOT / "data/eval_target.jsonl")
+    train_rows = core_train_rows(); target = rows(ROOT / "data/eval_target.jsonl")
     autopsy = {r["run"]: r for r in json.loads((ROOT / "results/autopsy.json").read_text())}
     run_csv = {r["run"]: r for r in csv.DictReader((ROOT / "results/runs.csv").open())}
     result = [{"r": 16, "placement": "text-linear", "learning_rate": 1e-4, "max_steps": MAX_STEPS,

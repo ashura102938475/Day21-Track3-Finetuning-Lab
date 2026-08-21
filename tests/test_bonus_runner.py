@@ -28,3 +28,11 @@ def test_b1_builds_a_resumable_second_adapter_in_bonus_storage():
     assert 'train_adapter("rank_8"' in b1
     assert 'adapters/attn_only' not in b1
     assert 'BONUS_ADAPTERS / "rank_8"' in b1
+
+
+def test_clean_clone_recreates_core_training_split():
+    source = SOURCE.read_text(encoding="utf-8")
+    assert "def core_train_rows" in source
+    assert 'ROOT / "data/train_seed.jsonl"' in source
+    assert "data.split(seed_rows, train_frac=0.9, seed=42)" in source
+    assert source.count("core_train_rows()") >= 2
