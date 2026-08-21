@@ -29,6 +29,12 @@ ISSUES = {
 URGENCY_TEXT = {"cao": "Mình cần xử lý ngay hôm nay", "trung_binh": "Mong phản hồi sớm", "thap": "Khi nào tiện hỗ trợ giúp mình"}
 SENTIMENT_TEXT = {"tieu_cuc": "Mình khá thất vọng", "trung_tinh": "Nhờ đội ngũ kiểm tra", "tich_cuc": "Cảm ơn đội ngũ rất nhiều"}
 INSTRUCTION = "Phân loại yêu cầu hỗ trợ học viên thành JSON đúng 4 khóa intent, urgency, product, sentiment."
+FRAMES = [
+    "Mình đang dùng {product}, {issue}. {urgency}. {sentiment}.",
+    "Cho mình hỏi về {product}: {issue}. {sentiment}. {urgency}.",
+    "Nhờ trung tâm hỗ trợ {product} vì {issue}. {urgency}. {sentiment}.",
+    "Học viên cần trợ giúp với {product}; {issue}. {sentiment}. {urgency}.",
+]
 
 
 def _norm(text: str) -> str:
@@ -43,7 +49,9 @@ def _row(i: int, rng: random.Random, *, trace: bool = False) -> dict:
     sentiment = SENTIMENTS[(i // (len(INTENTS) * len(URGENCIES))) % len(SENTIMENTS)]
     product = PRODUCTS[(i * 7 + seed_offset(rng)) % len(PRODUCTS)]
     issue = ISSUES[intent][(i // 3) % len(ISSUES[intent])]
-    ticket = f"HV{i + 10001}: Mình đang dùng {product}, {issue}. {URGENCY_TEXT[urgency]}. {SENTIMENT_TEXT[sentiment]}."
+    body = FRAMES[i % len(FRAMES)].format(product=product, issue=issue,
+        urgency=URGENCY_TEXT[urgency], sentiment=SENTIMENT_TEXT[sentiment])
+    ticket = f"HV{i + 10001}: {body}"
     label = {"intent": intent, "urgency": urgency, "product": product, "sentiment": sentiment}
     answer = json.dumps(label, ensure_ascii=False)
     if trace:
@@ -80,17 +88,25 @@ def validate_rows(rows: list[dict], eval_inputs: list[str]) -> dict:
     exact = [row.get("input", "") for row in rows]
     normalized = [_norm(x) for x in exact]
     eval_norm = {_norm(x) for x in eval_inputs}
+    counts = {}
+    for field in ("intent", "urgency", "sentiment"):
+        for value in (INTENTS if field == "intent" else URGENCIES if field == "urgency" else SENTIMENTS):
+            counts[f"{field}:{value}"] = sum(r.get("label", {}).get(field) == value for r in rows)
     return {
         "n": len(rows),
         "schema_errors": schema_errors,
         "exact_duplicates": len(exact) - len(set(exact)),
         "normalized_duplicates": len(normalized) - len(set(normalized)),
         "eval_overlaps": sum(x in eval_norm for x in normalized),
+        "label_counts": counts,
+        "min_label_count": min(counts.values()),
     }
 
 
 def core_hashes(root: pathlib.Path = ROOT) -> dict[str, str]:
-    paths = sorted((root / "results").glob("*.json")) + [root / "results/runs.csv"]
+    names = ["template_check.json", "mask_proof.json", "token_stats.json", "baselines_frozen.json",
+             "verdict.json", "autopsy.json", "qualitative.json"]
+    paths = [root / "results" / name for name in names] + [root / "results/runs.csv"]
     paths += [root / "adapters/correct/adapter_model.safetensors", root / "adapters/correct/adapter_config.json"]
     return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths if p.is_file()}
 

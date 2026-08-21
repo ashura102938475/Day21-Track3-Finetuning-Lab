@@ -3,5 +3,19 @@
   "schema_errors": 0,
   "exact_duplicates": 0,
   "normalized_duplicates": 0,
-  "eval_overlaps": 0
+  "eval_overlaps": 0,
+  "label_counts": {
+    "intent:doi_tra": 44,
+    "intent:van_chuyen": 44,
+    "intent:hoan_tien": 44,
+    "intent:san_pham_loi": 44,
+    "intent:hoi_thong_tin": 44,
+    "urgency:cao": 75,
+    "urgency:trung_binh": 75,
+    "urgency:thap": 70,
+    "sentiment:tieu_cuc": 75,
+    "sentiment:trung_tinh": 75,
+    "sentiment:tich_cuc": 70
+  },
+  "min_label_count": 44
 }

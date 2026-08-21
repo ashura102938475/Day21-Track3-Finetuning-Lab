@@ -18,3 +18,5 @@ def test_rank_sweep_is_controlled():
     assert "MAX_STEPS = 58" in source
     assert 'target="text-linear"' in source
     assert 'BONUS_ADAPTERS = ROOT / "adapters" / "bonus"' in source
+    assert "run_meta.json" in source
+    assert '"rank_range"' in source and '"placement_delta"' in source and '"lr_delta"' in source

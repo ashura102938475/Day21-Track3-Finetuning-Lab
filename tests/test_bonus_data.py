@@ -32,6 +32,8 @@ def test_custom_dataset_is_deterministic_valid_and_non_leaking():
     assert summary["exact_duplicates"] == 0
     assert summary["normalized_duplicates"] == 0
     assert summary["eval_overlaps"] == 0
+    assert summary["min_label_count"] >= 10
+    assert len({r["input"].split(":", 1)[1].strip().split()[0] for r in rows_a}) >= 3
 
 
 def test_trace_dataset_contains_real_traces_and_fixed_holdout():

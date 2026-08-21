@@ -46,7 +46,13 @@ def score(path, target_rows, regression_rows=None):
 
 def train_adapter(key, train_rows, mask_mode, rank):
     out = BONUS_ADAPTERS / key
-    if adapter_complete(out):
+    dataset_hash = hashlib.sha256(json.dumps(train_rows, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
+    expected = {"key": key, "mask_mode": mask_mode, "rank": rank, "max_steps": MAX_STEPS,
+                "model": TIER.model_id, "dataset_hash": dataset_hash}
+    meta_path = out / "run_meta.json"
+    try: current = json.loads(meta_path.read_text())
+    except Exception: current = None
+    if adapter_complete(out) and current == expected:
         print("resume:", key); return out
     from datasets import Dataset
     from peft import LoraConfig
@@ -63,6 +69,7 @@ def train_adapter(key, train_rows, mask_mode, rank):
     trainer = SFTTrainer(model=model, args=SFTConfig(**skw), train_dataset=dataset,
                          processing_class=tok, peft_config=LoraConfig(**lkw))
     trainer.train(); trainer.model.save_pretrained(out)
+    atomic_json(meta_path, expected)
     del trainer, model; generate.free_memory(); return out
 
 
@@ -109,7 +116,8 @@ def stage_b3():
     for mode in ("assistant-only", "response-only"):
         key = "trace_" + mode.replace("-", "_")
         metrics = score(train_adapter(key, train_rows, mode, 16), holdout, regression)
-        runs.append({"run": key, "mask_mode": mode, "mask_hash": hashes[mode], "r": 16,
+        dataset_hash = hashlib.sha256(json.dumps(train_rows, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
+        runs.append({"run": key, "mask_mode": mode, "mask_hash": hashes[mode], "dataset_hash": dataset_hash, "r": 16,
                      "max_steps": MAX_STEPS, **metrics})
     atomic_json(BONUS_RESULTS / "reasoning_trace.json", {"runs": runs, "n_train": len(train_rows), "n_holdout": len(holdout)})
 
@@ -125,7 +133,11 @@ def stage_b4():
         result.append({"r": rank, "placement": "text-linear", "learning_rate": 1e-4,
                        "max_steps": MAX_STEPS, **score(path, target)})
     result.sort(key=lambda x: x["r"])
-    atomic_json(BONUS_RESULTS / "rank_sweep.json", {"runs": result})
+    targets = [r["target"] for r in result]
+    atomic_json(BONUS_RESULTS / "rank_sweep.json", {"runs": result,
+                "rank_range": round(max(targets) - min(targets), 4),
+                "placement_delta": round(abs(autopsy["correct"]["target"] - autopsy["attn_only"]["target"]), 4),
+                "lr_delta": round(abs(autopsy["correct"]["target"] - autopsy["wrong_lr"]["target"]), 4)})
 
 
 def stage_report():

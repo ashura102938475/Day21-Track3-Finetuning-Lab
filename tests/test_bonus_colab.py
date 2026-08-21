@@ -19,6 +19,11 @@ def test_tokens_are_read_but_never_persisted_or_printed():
     assert 'userdata.get(\"HF_TOKEN\")' in text
     assert 'userdata.get(\"GITHUB_TOKEN\")' in text
     assert "print(HF_TOKEN" not in text and "print(GITHUB_TOKEN" not in text
+    assert "x-access-token:" not in text
+    assert text.index("scripts/verify.py") < text.index("scripts/publish_bonus.py")
+    assert 'os.environ["COMPUTE_TIER"] = "LAPTOP"' in text
+    assert '"remote", "add", "mine"' in text
+    assert '"remote", "set-url", "mine"' in text
 
 
 def test_build_is_deterministic():
