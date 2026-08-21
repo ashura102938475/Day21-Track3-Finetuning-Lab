@@ -37,3 +37,6 @@ hf_cache/
 .idea/
 .vscode/
 *.swp
+.ai-log/session.jsonl
+docs/superpowers/plans/
+
