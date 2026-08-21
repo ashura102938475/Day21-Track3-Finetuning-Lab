@@ -139,7 +139,13 @@ def write_all(root: pathlib.Path = ROOT) -> dict:
     )
     bonus = root / "results/bonus"; bonus.mkdir(parents=True, exist_ok=True)
     (bonus / "dataset_validation.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    (bonus / "core_hashes.json").write_text(json.dumps(core_hashes(root), indent=2), encoding="utf-8")
+    snapshot = bonus / "core_hashes.json"
+    current = core_hashes(root)
+    if snapshot.exists():
+        from labkit.bonus import assert_core_unchanged
+        assert_core_unchanged(json.loads(snapshot.read_text(encoding="utf-8")), current)
+    else:
+        snapshot.write_text(json.dumps(current, indent=2), encoding="utf-8")
     return summary
 
 

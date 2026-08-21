@@ -117,7 +117,8 @@ def stage_b3():
         key = "trace_" + mode.replace("-", "_")
         metrics = score(train_adapter(key, train_rows, mode, 16), holdout, regression)
         dataset_hash = hashlib.sha256(json.dumps(train_rows, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
-        runs.append({"run": key, "mask_mode": mode, "mask_hash": hashes[mode], "dataset_hash": dataset_hash, "r": 16,
+        runs.append({"run": key, "mask_mode": mode, "mask_hash": hashes[mode], "dataset_hash": dataset_hash,
+                     "model": TIER.model_id, "r": 16,
                      "max_steps": MAX_STEPS, **metrics})
     atomic_json(BONUS_RESULTS / "reasoning_trace.json", {"runs": runs, "n_train": len(train_rows), "n_holdout": len(holdout)})
 
@@ -131,6 +132,8 @@ def stage_b4():
     for rank in (8, 64):
         path = train_adapter(f"rank_{rank}", train_rows, "assistant-only", rank)
         result.append({"r": rank, "placement": "text-linear", "learning_rate": 1e-4,
+                       "model": TIER.model_id,
+                       "dataset_hash": hashlib.sha256(json.dumps(train_rows, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16],
                        "max_steps": MAX_STEPS, **score(path, target)})
     result.sort(key=lambda x: x["r"])
     targets = [r["target"] for r in result]

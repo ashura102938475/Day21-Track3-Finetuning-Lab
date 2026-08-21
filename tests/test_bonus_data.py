@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import pathlib
+import pytest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -53,3 +54,14 @@ def test_core_hashes_cover_only_frozen_evidence():
     assert "results/verdict.json" in hashes
     assert "adapters/correct/adapter_model.safetensors" in hashes
     assert not any("results/bonus" in key for key in hashes)
+
+
+def test_existing_core_snapshot_cannot_be_rebased(tmp_path):
+    bonus_data = load_module()
+    (tmp_path / "data").mkdir(); (tmp_path / "results/bonus").mkdir(parents=True)
+    for name in ("eval_target.jsonl", "eval_regression.jsonl"):
+        (tmp_path / "data" / name).write_text("", encoding="utf-8")
+    (tmp_path / "results/bonus/core_hashes.json").write_text(
+        json.dumps({"results/verdict.json": "frozen"}), encoding="utf-8")
+    with pytest.raises(ValueError, match="core evidence changed"):
+        bonus_data.write_all(tmp_path)

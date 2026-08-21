@@ -31,6 +31,17 @@ def _load(path: pathlib.Path):
         return None
 
 
+def _run_artifact_matches(root: pathlib.Path, run: dict, key: str, rank: int,
+                          mask_mode: str, dataset_hash: str) -> bool:
+    folder = root / "adapters/bonus" / key
+    meta = _load(folder / "run_meta.json") or {}
+    return adapter_complete(folder) and meta == {
+        "key": key, "mask_mode": mask_mode, "rank": rank,
+        "max_steps": run.get("max_steps"), "model": run.get("model"),
+        "dataset_hash": dataset_hash,
+    }
+
+
 def validate_bonus(root: pathlib.Path, require_publication: bool = True) -> list[Check]:
     out: list[Check] = []
     merge = _load(root / "results/merge_check.json") or {}
@@ -50,14 +61,31 @@ def validate_bonus(root: pathlib.Path, require_publication: bool = True) -> list
     b3 = len(modes) == 2 and {r.get("mask_mode") for r in modes} == {"assistant-only", "response-only"}
     b3 = b3 and len({r.get("mask_hash") for r in modes}) == 2 and len({r.get("max_steps") for r in modes}) == 1
     b3 = b3 and {r.get("r") for r in modes} == {16}
-    b3 = b3 and all(all(k in r for k in ("target", "regression", "format", "valid_trace_rate", "dataset_hash")) for r in modes)
+    b3 = b3 and {r.get("run") for r in modes} == {"trace_assistant_only", "trace_response_only"}
+    b3 = b3 and len({r.get("dataset_hash") for r in modes}) == 1
+    b3 = b3 and all(all(k in r for k in ("target", "regression", "format", "valid_trace_rate", "dataset_hash", "model")) for r in modes)
+    b3 = b3 and all(_run_artifact_matches(root, r, r["run"], 16, r["mask_mode"], r["dataset_hash"])
+                    for r in modes) if b3 else False
     out.append(Check("B3 reasoning trace", "PASS" if b3 else "FAIL"))
     sweep = _load(root / "results/bonus/rank_sweep.json") or {}
     runs = sweep.get("runs", [])
-    b4 = {r.get("r") for r in runs} == {8, 16, 64}
+    b4 = len(runs) == 3 and {r.get("r") for r in runs} == {8, 16, 64}
     b4 = b4 and len({r.get("max_steps") for r in runs}) == 1 and len({r.get("learning_rate") for r in runs}) == 1
     b4 = b4 and {r.get("placement") for r in runs} == {"text-linear"} and all("target" in r for r in runs)
-    b4 = b4 and all(k in sweep for k in ("rank_range", "placement_delta", "lr_delta"))
+    autopsy_rows = _load(root / "results/autopsy.json") or []
+    autopsy = {r.get("run"): r for r in autopsy_rows}
+    if b4 and {"correct", "attn_only", "wrong_lr"} <= set(autopsy):
+        expected_range = round(max(r["target"] for r in runs) - min(r["target"] for r in runs), 4)
+        expected_place = round(abs(autopsy["correct"]["target"] - autopsy["attn_only"]["target"]), 4)
+        expected_lr = round(abs(autopsy["correct"]["target"] - autopsy["wrong_lr"]["target"]), 4)
+        b4 = (sweep.get("rank_range") == expected_range and sweep.get("placement_delta") == expected_place
+              and sweep.get("lr_delta") == expected_lr)
+    else:
+        b4 = False
+    if b4:
+        by_rank = {r["r"]: r for r in runs}
+        b4 = all(_run_artifact_matches(root, by_rank[rank], f"rank_{rank}", rank, "assistant-only",
+                                       by_rank[rank].get("dataset_hash")) for rank in (8, 64))
     out.append(Check("B4 controlled rank sweep", "PASS" if b4 else "FAIL"))
     pub = _load(root / "results/bonus/publication.json") or {}
     b5 = pub.get("published") is True and str(pub.get("url", "")).startswith("https://huggingface.co/")

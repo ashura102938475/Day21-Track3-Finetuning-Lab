@@ -10,7 +10,7 @@ The student opens `colab/Lab21_BONUS_ALL.ipynb`, selects a GPU runtime, adds `HF
 
 ## Repository and authentication
 
-The notebook clones `https://github.com/ashura102938475/Day21-Track3-Finetuning-Lab.git` and uses `COMPUTE_TIER=T4` by default. Secrets are read through `google.colab.userdata`; their values are injected only into subprocess environments or authenticated library calls and are never written to `.env`, notebook output, git configuration, or committed files. Git commits use the existing student identity metadata, while pushes target the personal fork's `main` branch.
+The notebook clones `https://github.com/ashura102938475/Day21-Track3-Finetuning-Lab.git` and runs on Colab T4 hardware while retaining `COMPUTE_TIER=LAPTOP`. The frozen core evidence and adapters use Qwen3.5-2B; switching the experiment tier to the 4B model would invalidate the controlled comparisons. Secrets are read through `google.colab.userdata`; their values are injected only into subprocess environments or authenticated library calls and are never written to `.env`, notebook output, git configuration, or committed files. Git commits use the existing student identity metadata, while pushes target the personal fork's `main` branch.
 
 ## Isolation of core evidence
 
