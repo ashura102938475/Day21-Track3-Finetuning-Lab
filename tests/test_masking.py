@@ -170,6 +170,22 @@ def test_think_scaffold_does_not_trigger_a_false_prefix_alarm():
     assert ANSWER in data.decode_supervised(tok, ex)
 
 
+def test_real_reasoning_replaces_empty_generation_scaffold_safely():
+    """Qwen3.5 replaces the generation prompt's empty think block with a real trace."""
+    tok = FakeTokenizer(closed_think_scaffold=True)
+    trace = "<think>kiem tra intent va muc khan cap</think>" + ANSWER
+    messages = [
+        {"role": "system", "content": "Phan loai."},
+        {"role": "user", "content": QUESTION},
+        {"role": "assistant", "content": trace},
+    ]
+    assistant = data.build_example(tok, messages, mask_mode="assistant-only")
+    response = data.build_example(tok, messages, mask_mode="response-only")
+    assert "kiem tra intent" in data.decode_supervised(tok, assistant)
+    assert "kiem tra intent" not in data.decode_supervised(tok, response)
+    assert ANSWER in data.decode_supervised(tok, response)
+
+
 def test_token_lists_really_are_not_prefix_related():
     """Guards the fixture itself: if this stops holding, the regression above is vacuous."""
     tok = FakeTokenizer()

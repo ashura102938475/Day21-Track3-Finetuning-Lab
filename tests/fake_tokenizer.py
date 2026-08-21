@@ -23,11 +23,13 @@ SPECIALS = (IM_START, IM_END, "<think>", "</think>")
 
 class FakeTokenizer:
     def __init__(self, strip_thinking: bool = False, prefix_unstable: bool = False,
-                 think_scaffold: bool = True, fast: bool = True):
+                 think_scaffold: bool = True, fast: bool = True,
+                 closed_think_scaffold: bool = False):
         self.strip_thinking = strip_thinking
         self.prefix_unstable = prefix_unstable
         self.think_scaffold = think_scaffold
         self.fast = fast
+        self.closed_think_scaffold = closed_think_scaffold
         self.eos_token = IM_END
         self.pad_token = None
 
@@ -53,7 +55,9 @@ class FakeTokenizer:
         if add_generation_prompt:
             tail = f"{IM_START}assistant\n"
             if self.think_scaffold:
-                tail += "<think>\n"           # <- the boundary that breaks token diffing
+                tail += "<think>\n"
+                if self.closed_think_scaffold:
+                    tail += "\n</think>\n\n"
             parts.append(tail)
         return "".join(parts)
 

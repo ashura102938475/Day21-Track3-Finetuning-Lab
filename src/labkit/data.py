@@ -101,6 +101,38 @@ def find_span(haystack: list[int], needle: list[int], start: int = 0) -> int:
     return -1
 
 
+def _assistant_start_char(tokenizer, messages, assistant_index: int, full_text: str,
+                          enable_thinking: bool | None) -> int:
+    """Find the safe start of an assistant turn despite a replaceable think scaffold.
+
+    Qwen3.5's generation prompt contains a complete empty ``<think>`` block. When a
+    real reasoning trace is supplied, the template replaces that empty block, so the
+    generation prompt is not a literal prefix. The conversation context and assistant
+    header remain stable; the longest common prefix then ends exactly where the trace
+    begins. Any divergence before that verified boundary is still rejected.
+    """
+    prefix = _render(tokenizer, messages[:assistant_index], True, enable_thinking)
+    if full_text.startswith(prefix):
+        return len(prefix)
+    context = _render(tokenizer, messages[:assistant_index], False, enable_thinking)
+    if not prefix.startswith(context) or not full_text.startswith(context):
+        raise TemplateNotPrefixStable(
+            f"turn {assistant_index}: rendering the conversation context is not stable; "
+            "masking by difference is unsafe."
+        )
+    common = 0
+    for left, right in zip(prefix, full_text):
+        if left != right:
+            break
+        common += 1
+    if common <= len(context):
+        raise TemplateNotPrefixStable(
+            f"turn {assistant_index}: the template rewrites the assistant header; "
+            "masking by difference is unsafe."
+        )
+    return common
+
+
 def build_example(
     tokenizer,
     messages: list[dict],
@@ -133,15 +165,9 @@ def build_example(
         for i, msg in enumerate(messages):
             if msg.get("role") != "assistant":
                 continue
-            prefix_text = _render(tokenizer, messages[:i], True, enable_thinking)
             upto_text = _render(tokenizer, messages[:i + 1], False, enable_thinking)
-            if not full_text.startswith(prefix_text):
-                raise TemplateNotPrefixStable(
-                    f"turn {i}: rendering messages[:{i}] with add_generation_prompt is not "
-                    "a text prefix of the full render. This template rewrites earlier "
-                    "turns as the conversation grows; masking by difference is unsafe."
-                )
-            start_char, end_char = len(prefix_text), len(upto_text)
+            start_char = _assistant_start_char(tokenizer, messages, i, full_text, enable_thinking)
+            end_char = len(upto_text)
             if mask_mode in ("masked-think", "response-only"):
                 start_char = _skip_reasoning_chars(
                     full_text, start_char, end_char, think_close)
