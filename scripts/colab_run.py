@@ -25,6 +25,7 @@ STAGES = {
     "nb4": ("notebooks/04_misconfig_autopsy.py", "three misconfiguration contrasts"),
     "nb5": ("notebooks/05_evaluate_and_verdict.py", "four-group eval + verdict"),
     "nb6": ("notebooks/06_merge_and_serve.py", "merge + adapter hot-swap (optional)"),
+    "bonus": ("notebooks/07_bonus_all.py", "resumable bonus stage (pass stage directly for B1/B3/B4)"),
 }
 CORE = ["nb1", "nb2", "nb3", "nb4", "nb5"]
 
