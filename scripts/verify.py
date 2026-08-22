@@ -246,10 +246,11 @@ def full() -> None:
                   "rather than loosening the gate.")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    results.clear()
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true", help="imports + data + tests only")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     smoke()
     if not args.smoke:
