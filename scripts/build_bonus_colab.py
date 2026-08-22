@@ -5,7 +5,10 @@ import hashlib, json, pathlib
 import nbformat
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-DEST = ROOT / "colab/Lab21_BONUS_ALL.ipynb"
+DESTS = [
+    ROOT / "colab/Lab21_BONUS_ALL.ipynb",
+    ROOT / "colab/Lab21_BONUS_ALL_V2.ipynb",
+]
 
 CELLS = [
     ("Overview", "markdown", """# Lab 21 — BONUS ALL (B1–B5)\n\nChọn GPU runtime, thêm `HF_TOKEN` và `GITHUB_TOKEN` trong Colab Secrets, rồi chạy tuần tự. Các stage train có resume."""),
@@ -29,7 +32,10 @@ def render_notebook() -> str:
 
 
 def main():
-    DEST.write_text(render_notebook(), encoding="utf-8"); print("wrote", DEST)
+    rendered = render_notebook()
+    for dest in DESTS:
+        dest.write_text(rendered, encoding="utf-8")
+        print("wrote", dest)
 
 
 if __name__ == "__main__": main()

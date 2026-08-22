@@ -4,6 +4,7 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 NB = ROOT / "colab/Lab21_BONUS_ALL.ipynb"
+NB_V2 = ROOT / "colab/Lab21_BONUS_ALL_V2.ipynb"
 
 
 def test_bonus_colab_cell_order_and_gpu_guard():
@@ -30,6 +31,13 @@ def test_build_is_deterministic():
     spec = importlib.util.spec_from_file_location("builder", ROOT / "scripts/build_bonus_colab.py")
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     assert module.render_notebook() == module.render_notebook()
+
+
+def test_cache_busting_v2_notebook_matches_current_notebook():
+    assert NB_V2.is_file()
+    assert json.loads(NB_V2.read_text(encoding="utf-8")) == json.loads(
+        NB.read_text(encoding="utf-8")
+    )
 
 
 def test_gpu_stage_cells_use_diagnostic_runner():
